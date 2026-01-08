@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五年级数学竞赛 - 在线版</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Login Screen Styles */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .role-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 20px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+
+        .role-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-btn.selected {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #ffe3e3;
+            color: #c92a2a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* User Info Bar - Elegant Design */
+        .user-info-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .user-info-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-role-badge {
+            background: rgba(255,255,255,0.25);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-name {
+            font-size: 1.05em;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Game Container */
+        .game-container {
+            display: none;
+        }
+
+        .game-container.active {
+            display: block;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-control {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-start-all {
+            background: #51cf66;
+            color: white;
+        }
+        
+        .btn-start-all:hover:not(:disabled) {
+            background: #37b24d;
+            transform: translateY(-2px);
+        }
+        
+        .btn-pause {
+            background: #ffa500;
+            color: white;
+        }
+        
+        .btn-pause:hover:not(:disabled) {
+            background: #ff8c00;
+            transform: translateY(-2px);
+        }
+        
+        .btn-end {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-end:hover:not(:disabled) {
+            background: #ee5555;
+            transform: translateY(-2px);
+        }
+
+        .competition-status {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .question-area {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .question-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 30px 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer {
+            font-size: 3em;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin: 20px 0;
+        }
+
+        .student-selector {
+            margin: 20px 0;
+        }
+
+        .student-selector select {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .answer-btn {
+            padding: 20px 40px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-correct {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-correct:hover {
+            background: #37b24d;
+            transform: scale(1.05);
+        }
+
+        .btn-wrong {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-wrong:hover {
+            background: #ee5555;
+            transform: scale(1.05);
+        }
+
+        .btn-skip {
+            background: #868e96;
+            color: white;
+        }
+
+        .btn-skip:hover {
+            background: #6c757d;
+            transform: scale(1.05);
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feedback.correct {
+            background: #d3f9d8;
+            color: #2f9e44;
+        }
+
+        .feedback.incorrect {
+            background: #ffe3e3;
+            color: #c92a2a;
+        }
+
+        .leaderboard {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .leaderboard h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .student-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .student-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .student-card.rank-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .student-card.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            box-shadow: 0 5px 20px rgba(192, 192, 192, 0.4);
+        }
+
+        .student-card.rank-3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #e6a869 100%);
+            box-shadow: 0 5px 20px rgba(205, 127, 50, 0.4);
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .rank-badge {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .student-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .student-score {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .emoji-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10em;
+            animation: emojiPop 1s ease-out;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes emojiPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        #messageArea {
+            margin: 10px 0;
+        }
+
+        .message {
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Student View Styles */
+        .student-view-notice {
+            background: #e7f5ff;
+            color: #1971c2;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>🎓 数学竞赛</h1>
+            <p>请选择你的身份</p>
+
+            <div class="role-buttons">
+                <div class="role-btn" id="teacherRoleBtn">
+                    <div style="font-size:2.5em;">👨‍🏫</div>
+                    <div>老师</div>
+                </div>
+                <div class="role-btn" id="studentRoleBtn">
+                    <div style="font-size:2.5em;">👨‍🎓</div>
+                    <div>学生</div>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <!-- Teacher Login Form -->
+            <div class="login-form" id="teacherForm">
+                <div class="form-group">
+                    <label>老师密码：</label>
+                    <input type="password" id="teacherPassword" placeholder="输入密码">
+                </div>
+                <button class="login-btn" onclick="loginAsTeacher()">登录</button>
+            </div>
+
+            <!-- Student Login Form -->
+            <div class="login-form" id="studentForm">
+                <div class="form-group">
+                    <label>选择你的名字：</label>
+                    <select id="studentName">
+                        <option value="">-- 请选择 --</option>
+                        <option value="纪子谦">纪子谦</option>
+                        <option value="唐子谦">唐子谦</option>
+                        <option value="尤子璇">尤子璇</option>
+                        <option value="陈歆媃">陈歆媃</option>
+                        <option value="陈子欣">陈子欣</option>
+                        <option value="尤安宜">尤安宜</option>
+                        <option value="江劲毅">江劲毅</option>
+                        <option value="叶鈊儿">叶鈊儿</option>
+                        <option value="翁恩雅">翁恩雅</option>
+                        <option value="林芊妤">林芊妤</option>
+                        <option value="林俊豐">林俊豐</option>
+                        <option value="曹睿">曹睿</option>
+                        <option value="郭微微">郭微微</option>
+                    </select>
+                </div>
+                <button class="login-btn" onclick="loginAsStudent()">进入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container" id="gameContainer">
+        <div class="container">
+            <div class="header">
+                <h1>🎓 五年级数学竞赛 🎓</h1>
+                <p style="font-size: 1.2em; color: #666;">目标：80分 | 答对+3分 | 答错-5分 | 没人答对全体-8分</p>
+                <p style="font-size: 1em; color: #999; margin-top: 5px;">⏰ 游戏时间每逢星期三8.00pm-8.30pm</p>
+            </div>
+
+            <div class="main-content">
+                <div class="left-panel">
+                    <!-- User Info Bar -->
+                    <div class="user-info-bar">
+                        <div class="user-info-left">
+                            <span class="user-role-badge" id="userRoleBadge">老师</span>
+                            <span class="user-name" id="userName">加载中...</span>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">登出</button>
+                    </div>
+
+                    <!-- Control Panel (Teacher Only) -->
+                    <div class="control-panel" id="controlPanel">
+                        <div class="competition-status" id="competitionStatus">准备开始竞赛</div>
+                        <div id="timeWarning" style="color: #ff6b6b; font-weight: bold; font-size: 1.1em; margin: 10px 0; display: none;"></div>
+                        <div id="messageArea"></div>
+                        <div class="control-buttons">
+                            <button class="btn-control btn-start-all" id="startAllBtn" onclick="startCompetition()">
+                                🚀 开始竞赛
+                            </button>
+                            <button class="btn-control btn-pause" id="pauseBtn" onclick="pauseCompetition()" disabled style="background: #ffa500;">
+                                ⏸️ 暂停
+                            </button>
+                            <button class="btn-control" id="addPlayerBtn" onclick="addPlayer()" style="background: #4dabf7; color: white;">
+                                ➕ 加玩家
+                            </button>
+                            <button class="btn-control" id="deletePlayerBtn" onclick="deletePlayer()" style="background: #fa5252; color: white;">
+                                ➖ 删除玩家
+                            </button>
+                            <button class="btn-control" onclick="resetGame()" style="background: #ff6b6b; color: white;">
+                                🔄 重置游戏
+                            </button>
+                            <button class="btn-control btn-end" id="endBtn" onclick="endCompetition()" disabled>
+                                🏁 结束竞赛
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Student View Notice -->
+                    <div class="student-view-notice" id="studentNotice" style="display:none;">
+                        <p>📖 学生视图：等待老师开始游戏</p>
+                    </div>
+
+                    <!-- Question Area -->
+                    <div class="question-area">
+                        <div class="timer">
+                            <span id="timerDisplay">30</span> 秒
+                        </div>
+                        <div class="question-display" id="questionDisplay">
+                            等待开始...
+                        </div>
+
+                        <!-- Student Answer Input -->
+                        <div id="studentAnswerArea" style="display:none;">
+                            <div class="student-selector">
+                                <label style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px; display: block;">输入你的答案：</label>
+                                <input type="number" id="studentAnswer" placeholder="输入数字答案" style="width: 100%; padding: 15px; font-size: 1.5em; border: 3px solid #667eea; border-radius: 10px; text-align: center;" onkeypress="if(event.keyCode===13){event.preventDefault();studentSubmitAnswer();}">
+                            </div>
+                            <div style="margin-top: 20px; text-align: center;">
+                                <button type="button" class="answer-btn btn-correct" onclick="studentSubmitAnswer()" style="font-size: 1.5em; padding: 20px 60px;">
+                                    ✓ 提交答案
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Teacher Controls -->
+                        <div id="teacherControls" style="display:none;">
+                            <div class="student-view-notice" style="background: #fff4e6; color: #e67700;">
+                                <p>👨‍🏫 老师控制面板</p>
+                                <p style="margin-top:10px;">学生会在自己的设备上答题</p>
+                            </div>
+                        </div>
+
+                        <div class="feedback" id="feedback"></div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="leaderboard">
+                    <h2>🏆 实时排名</h2>
+                    <div id="leaderboardContent">
+                        <p style="text-align:center;color:#999;">加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLXwhhrpNXan4WogvOsHPIEtZQ1T2thNE",
+            authDomain: "math-competition-p5.firebaseapp.com",
+            databaseURL: "https://math-competition-p5-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "math-competition-p5",
+            storageBucket: "math-competition-p5.firebasestorage.app",
+            messagingSenderId: "432439907352",
+            appId: "1:432439907352:web:a4a3d2b239973435a6df6d"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Game State
+        let currentUser = null;
+        let isTeacher = false;
+        const TEACHER_PASSWORD = 'ck355091GOH!';
+
+        // Database References
+        const gameStateRef = database.ref('gameState');
+        const studentsRef = database.ref('students');
+        const currentQuestionRef = database.ref('currentQuestion');
+
+        // Initialize game with default students if not exists
+        function initializeGame() {
+            studentsRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    const defaultStudents = {
+                        '纪子谦': { score: 0, answered: 0 },
+                        '唐子谦': { score: 0, answered: 0 },
+                        '尤子璇': { score: 0, answered: 0 },
+                        '陈歆媃': { score: 0, answered: 0 },
+                        '陈子欣': { score: 0, answered: 0 },
+                        '尤安宜': { score: 0, answered: 0 },
+                        '江劲毅': { score: 0, answered: 0 },
+                        '叶鈊儿': { score: 0, answered: 0 },
+                        '翁恩雅': { score: 0, answered: 0 },
+                        '林芊妤': { score: 0, answered: 0 },
+                        '林俊豐': { score: 0, answered: 0 },
+                        '曹睿': { score: 0, answered: 0 },
+                        '郭微微': { score: 0, answered: 0 }
+                    };
+                    studentsRef.set(defaultStudents);
+                }
+            });
+
+            gameStateRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    gameStateRef.set({
+                        active: false,
+                        paused: false,
+                        currentQuestionIndex: 0,
+                        winner: null,
+                        timeLeft: 30
+                    });
+                }
+            });
+        }
+
+        // Login System
+        document.getElementById('teacherRoleBtn').onclick = function() {
+            document.getElementById('teacherRoleBtn').classList.add('selected');
+            document.getElementById('studentRoleBtn').classList.remove('selected');
+            document.getElementById('teacherForm').classList.add('active');
+            document.getElementById('studentForm').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('show');
+        };
+
+        document.getElementById('studentRoleBtn').onclick = function() {
+            document.getElementById('studentRoleBtn').classList.add('selected');
+            document.getElementById('teacherRoleBtn').classList.remove('selected');
+            document.getElementById('studentForm').classList.add('active');
+            document.getElementById('teacherForm').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('show');
+        };
+
+        function loginAsTeacher() {
+            const password = document.getElementById('teacherPassword').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (!password) {
+                errorMsg.textContent = '请输入密码';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            if (password !== TEACHER_PASSWORD) {
+                errorMsg.textContent = '密码错误';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            currentUser = '老师';
+            isTeacher = true;
+            enterGame();
+        }
+
+        function loginAsStudent() {
+            const studentName = document.getElementById('studentName').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (!studentName) {
+                errorMsg.textContent = '请选择你的名字';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            currentUser = studentName;
+            isTeacher = false;
+            enterGame();
+        }
+
+        function enterGame() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('gameContainer').classList.add('active');
+            
+            document.getElementById('userName').textContent = currentUser;
+            document.getElementById('userRoleBadge').textContent = isTeacher ? '👨‍🏫 老师' : '👨‍🎓 学生';
+
+            if (!isTeacher) {
+                // Student view - hide teacher controls, show answer input
+                document.getElementById('controlPanel').style.display = 'none';
+                document.getElementById('teacherControls').style.display = 'none';
+                document.getElementById('studentNotice').style.display = 'block';
+            } else {
+                // Teacher view
+                document.getElementById('studentAnswerArea').style.display = 'none';
+                document.getElementById('teacherControls').style.display = 'block';
+            }
+
+            // Listen to real-time updates
+            setupRealtimeListeners();
+            
+            // Load initial data
+            loadStudents();
+            
+            // Load student's current question if student
+            if (!isTeacher) {
+                loadStudentQuestion();
+            } else {
+                loadCurrentQuestion();
+            }
+            
+            initializeGame();
+        }
+
+        function logout() {
+            if (confirm('确定要登出吗？')) {
+                location.reload();
+            }
+        }
+
+        // Setup real-time listeners
+        function setupRealtimeListeners() {
+            // Listen to students changes
+            studentsRef.on('value', (snapshot) => {
+                const students = snapshot.val() || {};
+                updateLeaderboard(students);
+                if (isTeacher) {
+                    updateStudentDropdown(students);
+                }
+            });
+
+            // Listen to current question (Teacher only)
+            if (isTeacher) {
+                currentQuestionRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById('questionDisplay').textContent = data.question || '等待开始...';
+                        document.getElementById('timerDisplay').textContent = data.timeLeft || 30;
+                    }
+                });
+            }
+            // Students don't need a listener here - they load questions manually after answering
+
+            // Listen to game state
+            gameStateRef.on('value', (snapshot) => {
+                const state = snapshot.val() || {};
+                
+                const statusElement = document.getElementById('competitionStatus');
+                if (statusElement) {
+                    if (state.active) {
+                        statusElement.textContent = state.paused ? '⏸️ 已暂停' : '🎮 游戏进行中';
+                    } else {
+                        statusElement.textContent = '准备开始竞赛';
+                    }
+                }
+
+                // Update button states for teacher
+                if (isTeacher) {
+                    const startBtn = document.getElementById('startAllBtn');
+                    const pauseBtn = document.getElementById('pauseBtn');
+                    const endBtn = document.getElementById('endBtn');
+                    
+                    if (startBtn) startBtn.disabled = state.active;
+                    if (pauseBtn) pauseBtn.disabled = !state.active;
+                    if (endBtn) endBtn.disabled = !state.active;
+                }
+                
+                // Update student interface based on game state
+                if (!isTeacher) {
+                    if (!state.active || state.paused) {
+                        // Hide answer input if game is not active or paused
+                        document.getElementById('studentAnswerArea').style.display = 'none';
+                        document.getElementById('studentNotice').style.display = 'block';
+                        
+                        const noticeElement = document.getElementById('studentNotice');
+                        if (!state.active) {
+                            noticeElement.innerHTML = '<p>📖 学生视图：等待老师开始游戏...</p>';
+                        } else if (state.paused) {
+                            noticeElement.innerHTML = '<p>⏸️ 游戏已暂停，等待继续...</p>';
+                        }
+                    } else {
+                        // Game is active - show answer input
+                        document.getElementById('studentAnswerArea').style.display = 'block';
+                        document.getElementById('studentNotice').style.display = 'none';
+                        loadStudentQuestion();
+                    }
+                }
+
+                if (state.winner) {
+                    // Hide all inputs when there's a winner
+                    if (!isTeacher) {
+                        document.getElementById('studentAnswerArea').style.display = 'none';
+                    }
+                    showWinner(state.winner);
+                }
+            });
+        }
+
+        function loadStudents() {
+            studentsRef.once('value', (snapshot) => {
+                const students = snapshot.val() || {};
+                updateLeaderboard(students);
+                updateStudentDropdown(students);
+            });
+        }
+
+        function loadCurrentQuestion() {
+            currentQuestionRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById('questionDisplay').textContent = data.question || '等待开始...';
+                }
+            });
+        }
+
+        function updateLeaderboard(students) {
+            const sortedStudents = Object.entries(students).sort((a, b) => b[1].score - a[1].score);
+            const leaderboardHTML = sortedStudents.map((student, index) => {
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                return `
+                    <div class="student-card ${rankClass}">
+                        <div class="student-info">
+                            <div class="rank-badge">${index + 1}</div>
+                            <div class="student-name">${medal} ${student[0]}</div>
+                        </div>
+                        <div class="student-score">${student[1].score}分</div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('leaderboardContent').innerHTML = leaderboardHTML;
+        }
+
+        function updateStudentDropdown(students) {
+            if (!isTeacher) return;
+            
+            const select = document.getElementById('studentSelect');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">-- 请选择 --</option>';
+            Object.keys(students).forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+
+        function showMessage(text, type) {
+            if (!isTeacher) return;
+            
+            const msgArea = document.getElementById('messageArea');
+            const msg = document.createElement('div');
+            msg.className = 'message';
+            
+            if (type === 'success') {
+                msg.style.background = '#d3f9d8';
+                msg.style.color = '#2f9e44';
+            } else if (type === 'error') {
+                msg.style.background = '#ffe3e3';
+                msg.style.color = '#c92a2a';
+            } else {
+                msg.style.background = '#e7f5ff';
+                msg.style.color = '#1971c2';
+            }
+            
+            msg.textContent = text;
+            msgArea.appendChild(msg);
+            
+            setTimeout(() => {
+                if (msgArea.contains(msg)) {
+                    msgArea.removeChild(msg);
+                }
+            }, 3000);
+        }
+
+        function showWinner(winnerName) {
+            alert('🎉 游戏结束！\n\n🏆 获胜者：' + winnerName + '\n\n恭喜！！！');
+        }
+
+        // Student submits answer
+        function studentSubmitAnswer() {
+            if (isTeacher) return;
+            
+            // First check if game is active
+            gameStateRef.once('value', (stateSnapshot) => {
+                const state = stateSnapshot.val() || {};
+                
+                if (!state.active || state.paused) {
+                    alert('游戏未开始或已暂停！');
+                    return;
+                }
+                
+                const answerInput = document.getElementById('studentAnswer');
+                
+                // Safety check: make sure element exists
+                if (!answerInput) {
+                    console.error('答案输入框不存在');
+                    return;
+                }
+                
+                const studentAnswer = parseInt(answerInput.value);
+                
+                if (isNaN(studentAnswer)) {
+                    alert('请输入数字答案');
+                    return;
+                }
+                
+                // Get student's current question index
+                studentsRef.child(currentUser).once('value', (studentSnapshot) => {
+                    const student = studentSnapshot.val();
+                    const currentQuestionIndex = student.currentQuestionIndex || 0;
+                    
+                    // Get the question for this student
+                    const studentQuestionRef = firebase.database().ref(`gameData/questions/q${currentQuestionIndex}`);
+                    
+                    studentQuestionRef.once('value', (qSnapshot) => {
+                        const questionData = qSnapshot.val();
+                        
+                        if (!questionData) {
+                            // No more questions, generate new one
+                            generateQuestionForStudent(currentQuestionIndex);
+                            return;
+                        }
+                        
+                        const correctAnswer = questionData.answer;
+                        const isCorrect = studentAnswer === correctAnswer;
+                        
+                        // Update student score and move to next question
+                        const scoreChange = isCorrect ? 3 : -5;
+                        const newScore = student.score + scoreChange;
+                        
+                        studentsRef.child(currentUser).update({
+                            score: newScore,
+                            answered: student.answered + 1,
+                            currentQuestionIndex: currentQuestionIndex + 1
+                        });
+                        
+                        // Show feedback
+                        const feedback = document.getElementById('feedback');
+                        if (isCorrect) {
+                            feedback.className = 'feedback correct';
+                            feedback.textContent = `✓ 答对了！+3分`;
+                            showEmojiFeedback(true);
+                        } else {
+                            feedback.className = 'feedback incorrect';
+                            feedback.textContent = `✗ 答错了！正确答案是 ${correctAnswer}。-5分`;
+                            showEmojiFeedback(false);
+                        }
+                        
+                        // Clear answer input
+                        answerInput.value = '';
+                        
+                        // Clear feedback and load next question after delay
+                        setTimeout(() => {
+                            feedback.textContent = '';
+                            feedback.className = 'feedback';
+                            
+                            // Load next question for this student
+                            loadStudentQuestion();
+                        }, 1500);
+                        
+                        // Check for winner
+                        if (newScore >= 80) {
+                            gameStateRef.update({
+                                winner: currentUser,
+                                active: false
+                            });
+                            document.getElementById('studentAnswerArea').style.display = 'none';
+                        }
+                    });
+                });
+            });
+        }
+
+        function loadStudentQuestion() {
+            if (isTeacher) return;
+            
+            studentsRef.child(currentUser).once('value', (snapshot) => {
+                const student = snapshot.val();
+                const questionIndex = student.currentQuestionIndex || 0;
+                
+                const studentQuestionRef = firebase.database().ref(`gameData/questions/q${questionIndex}`);
+                
+                studentQuestionRef.once('value', (qSnapshot) => {
+                    const questionData = qSnapshot.val();
+                    
+                    if (!questionData) {
+                        // Generate new question
+                        generateQuestionForStudent(questionIndex);
+                    } else {
+                        // Display existing question
+                        document.getElementById('questionDisplay').textContent = questionData.question;
+                        document.getElementById('studentAnswer').value = '';
+                        document.getElementById('studentAnswer').focus();
+                    }
+                });
+            });
+        }
+        
+        function generateQuestionForStudent(questionIndex) {
+            // Generate a new math question
+            const operations = ['+', '-', '×', '÷'];
+            const op = operations[Math.floor(Math.random() * operations.length)];
+            let num1 = Math.floor(Math.random() * 100) + 1;
+            let num2 = Math.floor(Math.random() * 50) + 1;
+            
+            let question, answer;
+            
+            switch(op) {
+                case '+':
+                    answer = num1 + num2;
+                    question = `${num1} + ${num2} = ?`;
+                    break;
+                case '-':
+                    if (num1 < num2) [num1, num2] = [num2, num1];
+                    answer = num1 - num2;
+                    question = `${num1} - ${num2} = ?`;
+                    break;
+                case '×':
+                    num1 = Math.floor(Math.random() * 20) + 1;
+                    num2 = Math.floor(Math.random() * 20) + 1;
+                    answer = num1 * num2;
+                    question = `${num1} × ${num2} = ?`;
+                    break;
+                case '÷':
+                    num2 = Math.floor(Math.random() * 12) + 1;
+                    answer = Math.floor(Math.random() * 15) + 1;
+                    num1 = num2 * answer;
+                    question = `${num1} ÷ ${num2} = ?`;
+                    break;
+            }
+            
+            // Save question to database
+            const questionRef = firebase.database().ref(`gameData/questions/q${questionIndex}`);
+            questionRef.set({
+                question: question,
+                answer: answer
+            }).then(() => {
+                // Display the question
+                document.getElementById('questionDisplay').textContent = question;
+                document.getElementById('studentAnswer').value = '';
+                document.getElementById('studentAnswer').focus();
+            });
+        }
+
+        function showEmojiFeedback(isCorrect) {
+            const emojis = {
+                correct: ['🎉', '⭐', '🌟', '✨', '🎊', '👏', '🏆', '💯', '😊', '🥳'],
+                incorrect: ['👻', '😱', '😵', '🙈', '😖', '😭', '💀', '🤦', '😢', '😓']
+            };
+            
+            const emojiList = isCorrect ? emojis.correct : emojis.incorrect;
+            const randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            
+            const emojiElement = document.createElement('div');
+            emojiElement.className = 'emoji-feedback';
+            emojiElement.textContent = randomEmoji;
+            document.body.appendChild(emojiElement);
+            
+            setTimeout(() => {
+                if (document.body.contains(emojiElement)) {
+                    document.body.removeChild(emojiElement);
+                }
+            }, 1000);
+        }
+
+        // Teacher Functions
+        function startCompetition() {
+            if (!isTeacher) return;
+            
+            gameStateRef.update({
+                active: true,
+                paused: false,
+                currentQuestionIndex: 0,
+                winner: null
+            });
+            
+            // Generate first question
+            generateNextQuestion();
+            
+            showMessage('✅ 游戏开始！', 'success');
+            
+            // Start timer
+            startQuestionTimer();
+        }
+
+        let questionTimerInterval = null;
+
+        function startQuestionTimer() {
+            if (questionTimerInterval) {
+                clearInterval(questionTimerInterval);
+            }
+            
+            let timeLeft = 30;
+            currentQuestionRef.update({ timeLeft: timeLeft });
+            
+            questionTimerInterval = setInterval(() => {
+                timeLeft--;
+                currentQuestionRef.update({ timeLeft: timeLeft });
+                
+                if (timeLeft <= 0) {
+                    clearInterval(questionTimerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function handleTimeout() {
+            // Deduct 8 points from all students
+            studentsRef.once('value', (snapshot) => {
+                const students = snapshot.val() || {};
+                Object.keys(students).forEach(name => {
+                    const newScore = students[name].score - 8;
+                    studentsRef.child(name).update({
+                        score: newScore
+                    });
+                });
+            });
+            
+            // Show timeout message
+            currentQuestionRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const feedback = document.getElementById('feedback');
+                    feedback.className = 'feedback incorrect';
+                    feedback.textContent = `⏰ 时间到！没人答对！全体-8分。正确答案是 ${data.answer}。`;
+                    
+                    setTimeout(() => {
+                        feedback.textContent = '';
+                        feedback.className = 'feedback';
+                        generateNextQuestion();
+                        startQuestionTimer();
+                    }, 3000);
+                }
+            });
+        }
+
+        function pauseCompetition() {
+            if (!isTeacher) return;
+            
+            gameStateRef.once('value', (snapshot) => {
+                const state = snapshot.val() || {};
+                const newPausedState = !state.paused;
+                
+                gameStateRef.update({
+                    paused: newPausedState
+                });
+                
+                if (newPausedState) {
+                    // Pause timer
+                    if (questionTimerInterval) {
+                        clearInterval(questionTimerInterval);
+                    }
+                } else {
+                    // Resume timer
+                    currentQuestionRef.once('value', (qSnapshot) => {
+                        const data = qSnapshot.val();
+                        if (data && data.timeLeft > 0) {
+                            startQuestionTimer();
+                        }
+                    });
+                }
+                
+                showMessage(newPausedState ? '⏸️ 游戏暂停' : '▶️ 游戏继续', 'info');
+            });
+        }
+
+        function endCompetition() {
+            if (!isTeacher) return;
+            
+            if (confirm('确定要结束竞赛吗？')) {
+                if (questionTimerInterval) {
+                    clearInterval(questionTimerInterval);
+                }
+                
+                gameStateRef.update({
+                    active: false,
+                    paused: false
+                });
+                
+                currentQuestionRef.update({
+                    question: '游戏已结束',
+                    timeLeft: 0
+                });
+                
+                showMessage('🏁 游戏已结束', 'info');
+            }
+        }
+
+        function generateNextQuestion() {
+            // Check if game is still active
+            gameStateRef.once('value', (snapshot) => {
+                const state = snapshot.val() || {};
+                if (!state.active || state.paused) return;
+                
+                // Simple math question generator
+                const operations = ['+', '-', '×', '÷'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                let num1 = Math.floor(Math.random() * 100) + 1;
+                let num2 = Math.floor(Math.random() * 50) + 1;
+                
+                let question, answer;
+                
+                switch(op) {
+                    case '+':
+                        answer = num1 + num2;
+                        question = `${num1} + ${num2} = ?`;
+                        break;
+                    case '-':
+                        if (num1 < num2) [num1, num2] = [num2, num1];
+                        answer = num1 - num2;
+                        question = `${num1} - ${num2} = ?`;
+                        break;
+                    case '×':
+                        num1 = Math.floor(Math.random() * 20) + 1;
+                        num2 = Math.floor(Math.random() * 20) + 1;
+                        answer = num1 * num2;
+                        question = `${num1} × ${num2} = ?`;
+                        break;
+                    case '÷':
+                        num2 = Math.floor(Math.random() * 12) + 1;
+                        answer = Math.floor(Math.random() * 15) + 1;
+                        num1 = num2 * answer;
+                        question = `${num1} ÷ ${num2} = ?`;
+                        break;
+                }
+                
+                currentQuestionRef.set({
+                    question: question,
+                    answer: answer,
+                    timeLeft: 30
+                });
+                
+                // Start new timer
+                if (isTeacher) {
+                    startQuestionTimer();
+                }
+            });
+        }
+
+        function addPlayer() {
+            if (!isTeacher) return;
+            // This would show a modal - simplified for now
+            const name = prompt('输入新玩家名字：');
+            if (name && name.trim()) {
+                studentsRef.child(name).set({
+                    score: 0,
+                    answered: 0
+                });
+                showMessage(`✅ 添加玩家：${name}`, 'success');
+            }
+        }
+
+        function deletePlayer() {
+            if (!isTeacher) return;
+            // This would show a modal - simplified for now
+            studentsRef.once('value', (snapshot) => {
+                const students = snapshot.val();
+                const names = Object.keys(students);
+                const name = prompt('选择要删除的玩家：\n\n' + names.join('\n'));
+                
+                if (name && students[name]) {
+                    if (confirm(`确定删除 ${name}?`)) {
+                        studentsRef.child(name).remove();
+                        showMessage(`✅ 删除玩家：${name}`, 'success');
+                    }
+                }
+            });
+        }
+
+        function resetGame() {
+            if (!isTeacher) return;
+            
+            if (confirm('确定要重置所有分数吗？')) {
+                // Stop timer
+                if (questionTimerInterval) {
+                    clearInterval(questionTimerInterval);
+                }
+                
+                studentsRef.once('value', (snapshot) => {
+                    const students = snapshot.val();
+                    Object.keys(students).forEach(name => {
+                        studentsRef.child(name).update({
+                            score: 0,
+                            answered: 0
+                        });
+                    });
+                });
+                
+                gameStateRef.update({
+                    active: false,
+                    paused: false,
+                    currentQuestionIndex: 0,
+                    winner: null
+                });
+                
+                currentQuestionRef.set({
+                    question: '等待开始...',
+                    answer: 0,
+                    timeLeft: 30
+                });
+                
+                showMessage('🔄 游戏已重置', 'success');
+            }
+        }
+    </script>
+</body>
+</html>
